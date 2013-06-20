@@ -11,9 +11,11 @@ using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ScriptSharp.Testing;
 
-namespace ScriptSharp.Tests.Core {
+namespace ScriptSharp.Tests.Core
+{
 
-    public abstract class BrowserTest {
+    public abstract class BrowserTest
+    {
 
         private static readonly WebTest _webTest;
         private static readonly string[] _scripts = new string[] {
@@ -22,12 +24,14 @@ namespace ScriptSharp.Tests.Core {
         private static readonly string[] _codeFiles = new string[] {
             "OOP.cs"
         };
+        private static string _compilationFailures;
 
         private const int _port = 3976;
 
         private TestContext _context;
 
-        static BrowserTest() {
+        static BrowserTest()
+        {
             string assemblyPath = typeof(BrowserTest).Assembly.GetModules()[0].FullyQualifiedName;
             string binDirectory = Path.GetFullPath(Path.Combine(assemblyPath, "..\\..\\..\\..\\bin\\Debug\\"));
 
@@ -36,34 +40,55 @@ namespace ScriptSharp.Tests.Core {
             string codeDirectory = Path.Combine(webRoot, "Code");
 
             Directory.CreateDirectory(scriptsDirectory);
-            foreach (string script in _scripts) {
+            foreach (string script in _scripts)
+            {
                 File.Copy(Path.Combine(binDirectory, script), Path.Combine(scriptsDirectory, script), overwrite: true);
             }
 
+            List<string> codeFailures = new List<string>();
+
             string mscorlibPath = Path.Combine(binDirectory, "mscorlib.dll");
-            foreach (string codeFile in _codeFiles) {
+            foreach (string codeFile in _codeFiles)
+            {
                 string script = Path.GetFileNameWithoutExtension(codeFile) + Path.ChangeExtension(".cs", ".js");
 
                 SimpleCompilation compilation = new SimpleCompilation(Path.Combine(scriptsDirectory, script));
-                compilation.AddReference(mscorlibPath)
+                bool result = compilation.AddReference(mscorlibPath)
                            .AddSource(Path.Combine(codeDirectory, codeFile))
                            .Execute();
+
+                if (!result)
+                {
+                    codeFailures.Add(codeFile);
+                }
             }
+
+            _compilationFailures = (codeFailures.Count == 0) ? null : string.Join(", ", codeFailures);
 
             _webTest = new WebTest();
             _webTest.StartWebServer(_port, webRoot);
         }
 
-        public TestContext TestContext {
-            get {
+        public TestContext TestContext
+        {
+            get
+            {
                 return _context;
             }
-            set {
+            set
+            {
                 _context = value;
             }
         }
 
-        protected void RunTest(string url) {
+        protected void RunTest(string url)
+        {
+            if (_compilationFailures != null)
+            {
+                Assert.Fail("Could not run test due to compilation failure of " + _compilationFailures + ".");
+                return;
+            }
+
             Uri testUri = _webTest.GetTestUri(url);
 
             WebTestResult result = _webTest.RunTest(testUri, WebBrowser.Chrome);

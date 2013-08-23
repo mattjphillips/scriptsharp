@@ -35,6 +35,10 @@ namespace System.Xml {
             return null;
         }
 
+        public static XmlAttribute CreateAttributeNS(string namespaceURI, string qualifiedName) {
+            return null;
+        }
+
         [ScriptName("createCDATASection")]
         public XmlNode CreateCDataSection(string data) {
             return null;
@@ -45,6 +49,10 @@ namespace System.Xml {
         }
 
         public XmlNode CreateElement(string tagName) {
+            return null;
+        }
+
+        public XmlNode CreateElementNS(string namespaceURI, string qualifiedName) {
             return null;
         }
 
